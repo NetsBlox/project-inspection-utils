@@ -1,0 +1,34 @@
+{
+  "id": 50,
+  "type": "moveBlock",
+  "args": [
+    "<script><block collabId=\"item_50\" s=\"setPhysicsXPosition\"><l>0</l></block></script>",
+    {
+      "point": {
+        "x": "253",
+        "y": "160"
+      },
+      "element": "item_0",
+      "loc": "bottom",
+      "type": "block"
+    },
+    {
+      "type": "moveBlock",
+      "args": [
+        "item_1",
+        {
+          "point": {
+            "x": "253",
+            "y": "160"
+          },
+          "element": "item_0",
+          "loc": "bottom",
+          "type": "block"
+        }
+      ]
+    },
+    [
+      "item_2"
+    ]
+  ]
+}

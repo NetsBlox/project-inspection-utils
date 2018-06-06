@@ -1,0 +1,16 @@
+{
+  "name": "project-cli",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "ENV=test node node_modules/mocha/bin/mocha --recursive test"
+  },
+  "author": "Brian Broll",
+  "license": "ISC",
+  "dependencies": {
+    "commander": "^2.15.1",
+    "inquirer": "^5.2.0",
+    "mocha": "^5.2.0"
+  }
+}
