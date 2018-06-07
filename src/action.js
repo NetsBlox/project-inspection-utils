@@ -129,11 +129,13 @@ class Action {
 
     getValueFromPath(data, path) {
         path.forEach(index => {
+            if (!data) return;
             if (!Array.isArray(data)) {  // assume it must be an action
                 data = data.args;
             }
             data = data[index];
         });
+
         return data;
     }
 
@@ -183,6 +185,33 @@ class Action {
         const result = {};
         keys.forEach(key => result[key] = obj[key]);
         return result;
+    }
+
+    getExpectedTagNames (paths) {
+        const type = this.getType();
+        const tags = this.intersect(
+            paths
+                .map(path => this.getValueFromPath(Action.EXPECTED_TYPES[type], path))
+                .reduce((l1, l2) => l1.concat(l2), [])
+        );
+
+        return uniq(tags.filter(tag => !!tag));
+    }
+
+    intersect() {
+        const intersection = [];
+        const lists = Array.prototype.slice.call(arguments);
+        for (let i = lists[0].length; i--;) {
+            let item = lists[0][i];
+            let isInAll = true;
+            for (let l = lists.length; l--;) {
+                isInAll = isInAll && lists[l].includes(item);
+            }
+            if (isInAll) {
+                intersection.push(item);
+            }
+        }
+        return intersection;
     }
 
     toXML() {
@@ -264,5 +293,23 @@ class Action {
 }
 
 Action.prototype.escape = XML_Element.prototype.escape;
+
+const BLOCK = ['block'];
+const OWNER = ['stage', 'sprite'];
+Action.EXPECTED_TYPES = {
+    addBlock: [BLOCK, OWNER],
+    moveBlock: [BLOCK, BLOCK],
+    setBlockPosition: [BLOCK, null, null, BLOCK]
+};
+
+function uniq(list) {
+    const results = [];
+    list.forEach(item => {
+        if (!results.includes(item)) {
+            results.push(item);
+        }
+    });
+    return results;
+}
 
 module.exports = Action;

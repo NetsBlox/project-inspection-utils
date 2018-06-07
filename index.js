@@ -150,6 +150,10 @@ function repairProjectReplay(events) {
         .catch(err => console.error(err));
 }
 
+function getTagName(xml) {
+    return xml.split(' ')[0].substring(1);
+}
+
 function resolveReferencedIDs(event, changedIds, itemsById) {
     // For each referenced id, prompt the user to resolve
     const indicesForId = event.getReferencedIDs();
@@ -158,11 +162,26 @@ function resolveReferencedIDs(event, changedIds, itemsById) {
     return ids.reduce((promise, id) => {
         return promise.then(() => {
             const paths = indicesForId[id];
-            const options = changedIds.get(id);
+
+            let options = changedIds.get(id);
+            let baseIds = options.map(id => id.split('/')[0]);
+            let xmls = baseIds.map(id => itemsById[id]);
+            const tagnames = xmls.map(getTagName);
+            const expectedTagNames = event.getExpectedTagNames(paths);
+
+            // Filter the options by expected type
+            if (expectedTagNames.length) {
+                options = options.filter((_, i) => {
+                    const tagname = tagnames[i];
+                    return expectedTagNames.includes(tagname);
+                });
+                baseIds = options.map(id => id.split('/')[0]);
+                xmls = baseIds.map(id => itemsById[id]);
+            }
+
             const isAmbiguous = options.length > 1;
+
             if (isAmbiguous) {
-                const baseIds = options.map(id => id.split('/')[0]);
-                const xmls = baseIds.map(id => itemsById[id]);
 
                 // Ask the user which id should be used
                 // (Use the last one by default)
@@ -194,6 +213,17 @@ function resolveReferencedIDs(event, changedIds, itemsById) {
                         console.log(event.pretty());
                     });
             }
+
+            if (expectedTagNames.length) {
+                console.log(
+                    'resolved block id automatically for event',
+                    event.getId(),
+                    options[0],
+                    '(expected',
+                    expectedTagNames.join(' or ') + ')'
+                );
+            }
+            paths.forEach(path => event.setArgByPath(path, options[0]));
         });
     }, Promise.resolve());
 }

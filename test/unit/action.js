@@ -46,6 +46,13 @@ describe('action', function() {
         });
     });
 
+    describe('getExpectedTagNames', function() {
+        it('should accept sprites for the second arg', function() {
+            const tags = action.getExpectedTagNames([[1]]);
+            assert(tags.includes('block'));
+        });
+    });
+
     // Check that it updates the undo content of removeBlock, moveBlock (59)
     // TODO
 });
