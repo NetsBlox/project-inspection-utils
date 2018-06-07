@@ -46,6 +46,6 @@ describe('action', function() {
         });
     });
 
-    // Check that it updates the undo content of removeBlock
+    // Check that it updates the undo content of removeBlock, moveBlock (59)
     // TODO
 });

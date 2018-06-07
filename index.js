@@ -32,11 +32,12 @@ class MigrationRegistry {
 }
 
 // Get the project xml
-const filename = process.argv[2];
-if (!filename) {
-    console.error(`usage: ${process.argv[1]} <filename>`);
+if (process.argv.length < 4) {
+    console.error(`usage: ${process.argv[1]} <filename> <outfile>`);
     process.exit(1);
 }
+const filename = process.argv[2];
+const outfile = process.argv[3];
 
 const fs = require('fs');
 const projectString = fs.readFileSync(filename, 'utf8');
@@ -51,7 +52,15 @@ element.parseString(projectString);
 
 if (element.tag === 'room') {
     // FIXME
-    element.children.forEach(child => checkProjectReplay(child.childNamed('project')));
+    element.children
+        .reduce((promise, child) => {
+            const project = child.childNamed('project');
+            return promise.then(() => checkProjectReplay(project));
+        }, Promise.resolve())
+        .then(() => {
+            fs.writeFileSync(outfile, element.toString());
+            console.log('modified project written to ' + outfile);
+        });
 }
 
 function checkProjectReplay(element) {
@@ -62,7 +71,21 @@ function checkProjectReplay(element) {
 
     if (hasResetEventIds(events)) {
         console.log('detected a reset of action ids in the project!');
-        repairProjectReplay(events);
+        return repairProjectReplay(events)
+            .then(() => {  // save the events!
+                const eventXML = events.map(event => event.toXML()).join('');
+                const replayStr = `<replay>${eventXML}</replay>`;
+
+                // replace the replay node with this one!
+                // Remove the old replay
+                const oldReplay = element.childNamed('replay');
+                element.removeChild(oldReplay);
+
+                // add the new replay
+                let replay = new XML_Element(null, null, element);
+                replay.parseString(replayStr);
+                return replay;
+            })
     }
     //const eventIds = events.map(ev => ev.id);
     return events;
@@ -100,29 +123,31 @@ function repairProjectReplay(events) {
     let actualIndex = events[1];
     let i = 1;
     let currentId = -1;
-    return events.reduce((promise, event) => {
-        return promise.then(() => {
-            const lastId = currentId;
-            currentId = event.getId();
-            if (event.getId() < lastId + 1) {
-                const newId = lastId + 1;
-
-
-                const updates = event.setId(newId);
+    return events
+        .reduce((promise, event) => {
+            return promise.then(() => {
+                const lastId = currentId;
                 currentId = event.getId();
-                // Record any ambiguities and the xml for each id
-                updates.forEach(tuple => {
-                    const [prevId, id, xml] = tuple;
-                    changedIds.record(prevId, id);
-                    itemsById[id] = xml;
-                });
+                if (event.getId() < lastId + 1) {
+                    const newId = lastId + 1;
 
-                // Get the referenced IDs by this event
-                return resolveReferencedIDs(event, changedIds, itemsById);
-            }
-        });
-    }, Promise.resolve())
-    .catch(err => console.error(err));
+
+                    const updates = event.setId(newId);
+                    currentId = event.getId();
+                    // Record any ambiguities and the xml for each id
+                    updates.forEach(tuple => {
+                        const [prevId, id, xml] = tuple;
+                        changedIds.record(prevId, id);
+                        itemsById[id] = xml;
+                    });
+
+                    // Get the referenced IDs by this event
+                    return resolveReferencedIDs(event, changedIds, itemsById);
+                }
+            });
+        }, Promise.resolve())
+        .then(() => events)
+        .catch(err => console.error(err));
 }
 
 function resolveReferencedIDs(event, changedIds, itemsById) {
@@ -151,7 +176,7 @@ function resolveReferencedIDs(event, changedIds, itemsById) {
                     type: 'list',
                     name: 'selectedIndex',
                     choices,
-                    message: `Which item should be used for arg ${paths[0].join('.')} (${baseIds[0]})?`
+                    message: `Which item should be used for arg ${baseIds[0]} (${paths[0].join('.')})?`
                 };
 
                 console.log();

@@ -1,3 +1,5 @@
+const XML_Element = require('../lib/snap/xml');
+
 class Action {
     constructor(data) {
         this.data = data;
@@ -182,7 +184,85 @@ class Action {
         keys.forEach(key => result[key] = obj[key]);
         return result;
     }
+
+    toXML() {
+        const data = this.data;
+        const args = data.args.map(arg => this.getArgumentXML('arg', arg));
+        const xml = this.format(
+            '<event id="@" type="@" replayType="@" time="@" user="@" username="@" isUserAction="@">%</event>',
+            data.id,
+            data.type,
+            data.replayType || 0,
+            data.time,
+            data.user,
+            data.username || '',
+            data.isUserAction || false,
+            args
+        );
+
+        return xml;
+    }
+
+    getArgumentXML (tag, item) {
+        var myself = this,
+            xml = item;
+
+        if (item instanceof Object) {
+            var keys = Object.keys(item);
+
+            xml = keys.map(function(key) {
+                if (item[key] instanceof Array) {
+                    return item[key].map(function(el) {
+                        // prefix index with '_' since xml can't start with a number
+                        return myself.getArgumentXML('_' + key, el);
+                    }).join('');
+                } else {
+                    if (/^[^a-zA-Z].*/.test(key)) {
+                        return myself.getArgumentXML('_' + key, item[key]);
+                    }
+                    return myself.getArgumentXML(key, item[key]);
+                }
+            }).join('');
+
+        } else if (typeof item === 'string' && item[0] === '<') {
+            xml = '<![CDATA[' + item.replace(/]]>/g, '&ncdata;]>') + ']]>';
+        }
+
+        return [
+            '<', tag, '>',
+            xml,
+            '</', tag, '>'
+        ].join('');
+    }
+
+    format (string) {  // This is adapted from Snap
+        // private
+        var myself = this,
+            i = -1,
+            values = arguments,
+            value;
+
+        return string.replace(/[@$%]([\d]+)?/g, function (spec, index) {
+            index = parseInt(index, 10);
+
+            if (isNaN(index)) {
+                i += 1;
+                value = values[i + 1];
+            } else {
+                value = values[index + 1];
+            }
+            // original line of code - now frowned upon by JSLint:
+            // value = values[(isNaN(index) ? (i += 1) : index) + 1];
+
+            return spec === '@' ?
+                    myself.escape(value)
+                        : spec === '$' ?
+                            myself.escape(value, true)
+                                : value;
+        });
+    }
 }
 
+Action.prototype.escape = XML_Element.prototype.escape;
 
 module.exports = Action;
