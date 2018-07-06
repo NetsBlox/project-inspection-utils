@@ -216,7 +216,7 @@ class Action {
 
     toXML() {
         const data = this.data;
-        const args = data.args.map(arg => this.getArgumentXML('arg', arg));
+        const args = data.args.map(arg => this.getArgumentXML('arg', arg)).join('');
         const xml = this.format(
             '<event id="@" type="@" replayType="@" time="@" user="@" username="@" isUserAction="@">%</event>',
             data.id,
