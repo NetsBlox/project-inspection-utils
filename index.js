@@ -25,8 +25,10 @@ class MigrationRegistry {
 
     get(id) {
         const baseId = id.split('/')[0];
-        const suffix = id.split('/').slice(1).join('/');
-        return this.ids[baseId].map(newId => `${newId}/${suffix}`);
+        const suffix = id.split('/').slice(1)
+            .filter(chunk => !!chunk);
+        return this.ids[baseId]
+            .map(newId => [newId].concat(suffix).join('/'));
     }
 
 }
