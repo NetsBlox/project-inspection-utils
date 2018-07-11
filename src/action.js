@@ -34,7 +34,7 @@ class Action {
         // Update the ids of any created blocks
         return newItemsWithIndex.map(tuple => {
                 const [item, index] = tuple;
-                const updates = this.updateItemId(item, oldId-1, id);
+                const updates = this.updateItemId(item, oldId-1, id-1);
                 return updates.map(update => {
                     const [oldItemId, itemId, itemXml, xml] = update;
 
