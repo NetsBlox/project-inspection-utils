@@ -201,33 +201,16 @@ class Project {
                 const isAmbiguous = options.length > 1;
 
                 if (isAmbiguous) {
-
                     // Ask the user which id should be used
                     // (Use the last one by default)
-                    const choices = xmls.map((xml, i) => {
-                        return {
-                            name: xml,
-                            value: i
-                        };
-                    }).reverse();
-                    const question = {
-                        type: 'list',
-                        name: 'selectedIndex',
-                        choices,
-                        message: `Which item should be used for arg ${baseIds[0]} (${paths[0].join('.')})?`
+                    const info = {
+                        baseIds, 
+                        xmls,
+                        paths,
+                        event
                     };
-
-                    console.log();
-                    console.log('Found event with ambiguous argument:');
-                    const prettyEvent = event.pretty();
-                    console.log(prettyEvent);
-                    console.log();
-                    console.log(options);
-                    // Make this configurable!
-                    // TODO
-                    return inquirer.prompt([question])
-                        .then(answers => {
-                            const itemId = options[answers.selectedIndex];
+                    return this.selectOption(options, info)
+                        .then(itemId => {
                             // Update the given arg
                             paths.forEach(path => event.setArgByPath(path, itemId));
                             console.log('updated event:');
@@ -247,6 +230,11 @@ class Project {
                 paths.forEach(path => event.setArgByPath(path, options[0]));
             });
         }, Promise.resolve());
+    }
+
+    selectOption(ids, info) {
+        console.log('>>>>>>> using default selector');
+        return Promise.resolve(ids[0]);
     }
 
     getTagName(xml) {
