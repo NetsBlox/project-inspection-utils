@@ -8,6 +8,11 @@ class Project {
         this.element.parseString(text);
     }
 
+    clone() {
+        const text = this.toString();
+        return new Project(text);
+    }
+
     repair() {
         if (this.element.tag === 'room') {
             return this.element.children
