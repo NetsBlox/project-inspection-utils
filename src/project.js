@@ -1,7 +1,6 @@
 const Action = require('./action');
 const MigrationRegistry = require('./migration-registry');
 const XML_Element = require('../lib/snap/xml');
-const inquirer = require('inquirer');
 
 class Project {
     constructor(text) {
@@ -44,7 +43,7 @@ class Project {
                     return replay;
                 })
         }
-        //const eventIds = events.map(ev => ev.id);
+
         return events;
     }
 
